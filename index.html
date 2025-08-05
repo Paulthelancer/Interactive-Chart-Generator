@@ -480,7 +480,7 @@
                             color: 'var(--text-color)'
                         },
                         legend: {
-                            display: !(chartTypeSelect.value === 'bar' && labels.length >= 12), // Hide legend for bar charts with >= 12 categories
+                            display: !(chartTypeSelect.value === 'bar' && labels.length >= 10), // Hide legend for bar charts with >= 10 categories
                             labels: {
                                 color: 'var(--text-color)',
                                 generateLabels: function(chart) {
