@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Interactive Chart Generator by Udoy Paul</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #f8f9fc;
+            --text-color: #5a5c69;
+            --border-color: #e3e6f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--secondary-color);
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            flex-grow: 1;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        #sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px var(--shadow-color);
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        #main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px var(--shadow-color);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input[type="text"], select, input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            color: var(--text-color);
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            padding: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #file-input {
+            margin-bottom: 20px;
+        }
+
+        #download-chart-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        #download-chart-btn:hover {
+            background-color: #2e59d9;
+        }
+
+        #chart-container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        #chart-counter {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        #tool-instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            border: 1px solid #e3e6f0;
+            color: #5a5c69;
+            font-size: 0.9em;
+            line-height: 1.5;
+            max-width: 900px;
+        }
+
+        #tool-instructions h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        #tool-instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        #tool-instructions li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="sidebar">
+            <h2>Controls</h2>
+            <div class="control-group">
+                <label for="file-input">Upload Data File</label>
+                <input type="file" id="file-input" accept=".csv, .xlsx">
+            </div>
+            <div class="control-group">
+                <label for="chart-title-input">Chart Title:</label>
+                <input type="text" id="chart-title-input" value="My Chart">
+            </div>
+            <div class="control-group">
+                <label for="chart-type-select">Chart Type:</label>
+                <select id="chart-type-select">
+                    <option value="bar">Bar</option>
+                    <option value="line">Line</option>
+                    <option value="pie">Pie</option>
+                    <option value="doughnut">Doughnut</option>
+                    <option value="radar">Radar</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="x-axis-select">X-Axis:</label>
+                <select id="x-axis-select"></select>
+            </div>
+            <div class="control-group">
+                <label for="y-axis-select">Y-Axis:</label>
+                <select id="y-axis-select"></select>
+            </div>
+            <div class="control-group">
+                <label for="x-axis-label-input">X-Axis Label:</label>
+                <input type="text" id="x-axis-label-input" value="X-Axis">
+            </div>
+            <div class="control-group">
+                <label for="y-axis-label-input">Y-Axis Label:</label>
+                <input type="text" id="y-axis-label-input" value="Y-Axis">
+            </div>
+            <div class="control-group">
+                <label for="chart-color-input">Chart Color:</label>
+                <input type="color" id="chart-color-input" value="#4e73df">
+            </div>
+            <div class="control-group">
+                <label for="axis-color-input">Axis Color:</label>
+                <input type="color" id="axis-color-input" value="#5a5c69">
+            </div>
+            <div class="control-group">
+                <label for="grid-color-input">Grid Color:</label>
+                <input type="color" id="grid-color-input" value="#e3e6f0">
+            </div>
+            <div class="control-group">
+                <input type="checkbox" id="show-grids-checkbox" checked>
+                <label for="show-grids-checkbox">Show Grids</label>
+            </div>
+            <div class="control-group" id="line-chart-options" style="display: none;">
+                <label for="line-width-input">Line Width:</label>
+                <input type="number" id="line-width-input" value="1" min="1" max="10">
+                <label for="line-type-select">Line Type:</label>
+                <select id="line-type-select">
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                </select>
+            </div>
+            <div class="control-group" id="bar-chart-options" style="display: none;">
+                <label for="bar-width-input">Bar Width:</label>
+                <input type="number" id="bar-width-input" value="0.9" min="0.1" max="1" step="0.1">
+                <label for="bar-edge-color-input">Bar Edge Color:</label>
+                <input type="color" id="bar-edge-color-input" value="#4e73df">
+                <label for="bar-border-width-input">Bar Border Width:</label>
+                <input type="number" id="bar-border-width-input" value="1" min="0" max="10">
+            </div>
+        </div>
+        <div id="main-content">
+            <h1>Interactive Chart Generator</h1>
+            <p style="font-size: 0.8em; font-family: 'Poppins', sans-serif; color: #1a2b3c; margin-top: -10px;">© 2025 by Udoy Paul</p>
+            <div id="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+            <div id="chart-counter">Charts Generated: 0</div>
+            <button id="download-chart-btn">Download Chart as PNG</button>
+
+            <div id="tool-instructions">
+                <h3>Tool Usage & Limitations:</h3>
+                <ul>
+                    <li><b>Purpose:</b> This tool helps visualize data from CSV/Excel files into various chart types.</li>
+                    <li><b>Data Format:</b> Ensure your data has clear headers. The first column is typically used for X-axis/categories, and subsequent numeric columns for Y-axis/values.</li>
+                    <li><b>Chart Types:</b> Supports Bar, Line, Pie, Doughnut, and Radar charts.</li>
+                    <li><b>Pie/Doughnut Chart Limit:</b> For optimal readability, Pie and Doughnut charts are best suited for 10 or fewer categories. An alert will appear if you exceed this.</li>
+                    <li><b>Customization:</b> Adjust chart title, axis labels, colors, line width, line type, bar width, and bar edge color using the controls.</li>
+                    <li><b>Download:</b> Charts can be downloaded as PNG images.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const xAxisSelect = document.getElementById('x-axis-select');
+        const yAxisSelect = document.getElementById('y-axis-select');
+        const chartTypeSelect = document.getElementById('chart-type-select');
+        const chartTitleInput = document.getElementById('chart-title-input');
+        const xAxisLabelInput = document.getElementById('x-axis-label-input');
+        const yAxisLabelInput = document.getElementById('y-axis-label-input');
+        const chartColorInput = document.getElementById('chart-color-input');
+        const axisColorInput = document.getElementById('axis-color-input');
+        const gridColorInput = document.getElementById('grid-color-input');
+        const showGridsCheckbox = document.getElementById('show-grids-checkbox');
+        const downloadChartBtn = document.getElementById('download-chart-btn');
+        const chartCounter = document.getElementById('chart-counter');
+        const ctx = document.getElementById('myChart').getContext('2d');
+        
+        let myChart;
+        let chartData;
+        let chartGenerationCount = 0;
+
+        const colorPalettes = {
+            categorical: [
+                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                '#858796', '#fd7e14', '#6f42c1', '#20c997', '#e83e8c'
+            ]
+        };
+
+        // Automatically load the local CSV file
+        window.addEventListener('DOMContentLoaded', (event) => {
+            fetch('bar_chart_data.csv') // Changed to bar_chart_data.csv for initial display
+                .then(response => response.text())
+                .then(csvText => {
+                    parseCsv(csvText);
+                });
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.name.endsWith('.csv')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => parseCsv(e.target.result);
+                    reader.readAsText(file);
+                } else if (file.name.endsWith('.xlsx')) {
+                    parseXlsx(file);
+                } else {
+                    alert('Unsupported file type. Please select a CSV or Excel file.');
+                }
+            }
+        });
+
+        function parseCsv(csvText) {
+            Papa.parse(csvText, {
+                header: true,
+                dynamicTyping: true,
+                complete: (results) => {
+                    console.log('CSV Parse Results:', results);
+                    chartData = results.data;
+                    populateSelectors(results.meta.fields);
+                    renderChart();
+                }
+            });
+        }
+
+        function parseXlsx(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                console.log('XLSX JSON Data:', jsonData);
+                chartData = jsonData;
+                const headers = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0];
+                console.log('XLSX Headers:', headers);
+                populateSelectors(headers);
+                renderChart();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function populateSelectors(headers) {
+            console.log('Populating selectors with headers:', headers);
+            xAxisSelect.innerHTML = '';
+            yAxisSelect.innerHTML = '';
+            headers.forEach(header => {
+                const option = `<option value="${header}">${header}</option>`;
+                xAxisSelect.innerHTML += option;
+                yAxisSelect.innerHTML += option;
+            });
+            yAxisSelect.selectedIndex = 1;
+        }
+
+        function generateColorsForCategorical(numColors) {
+            const palette = colorPalettes.categorical;
+            const colors = [];
+            for (let i = 0; i < numColors; i++) {
+                colors.push(palette[i % palette.length]); // Cycle through the palette
+            }
+            return colors;
+        }
+
+        function generateRandomColor(alpha = 1) {
+            const r = Math.floor(Math.random() * 255);
+            const g = Math.floor(Math.random() * 255);
+            const b = Math.floor(Math.random() * 255);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function renderChart() {
+            console.log('Rendering chart...');
+            console.log('Chart Data:', chartData);
+            console.log('Selected X-Axis:', xAxisSelect.value);
+            console.log('Selected Y-Axis:', yAxisSelect.value);
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            if (!chartData || chartData.length === 0) {
+                console.log('No chart data available.');
+                return;
+            }
+
+            const selectedXAxis = xAxisSelect.value;
+            const selectedYAxis = yAxisSelect.value;
+
+            let datasets = [];
+            let labels = [];
+
+            const chartContainer = document.getElementById('chart-container');
+            const myChartCanvas = document.getElementById('myChart');
+
+            if (chartTypeSelect.value === 'pie' || chartTypeSelect.value === 'doughnut') {
+                chartContainer.style.maxWidth = '500px';
+                myChartCanvas.style.height = '500px';
+            } else {
+                chartContainer.style.maxWidth = '900px';
+                myChartCanvas.style.height = '';
+            }
+
+            if (chartTypeSelect.value === 'radar') {
+                const headers = Object.keys(chartData[0]);
+                const categoryHeader = headers[0];
+                const valueHeaders = headers.slice(1);
+
+                labels = valueHeaders;
+
+                chartData.forEach((row, index) => {
+                    const dataValues = valueHeaders.map(header => row[header]);
+                    const randomColor = generateColorsForCategorical(1)[0]; // Use one color from palette
+                    datasets.push({
+                        label: row[categoryHeader],
+                        data: dataValues,
+                        backgroundColor: randomColor.replace('rgb', 'rgba').replace(')', ', 0.2)'), // Lighten for fill
+                        borderColor: randomColor,
+                        pointBackgroundColor: randomColor,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: randomColor,
+                        borderWidth: 1
+                    });
+                });
+
+            } else {
+                // Ensure selected axes exist in data (for non-radar charts)
+                if (!chartData[0] || !chartData[0].hasOwnProperty(selectedXAxis) || !chartData[0].hasOwnProperty(selectedYAxis)) {
+                    console.error('Selected X or Y axis not found in data. Please check your file headers and selections.');
+                    return;
+                }
+
+                labels = chartData.map(row => row[selectedXAxis]);
+
+                // Check for pie and doughnut chart suitability
+                if ((chartTypeSelect.value === 'pie' || chartTypeSelect.value === 'doughnut') && labels.length > 10) {
+                    alert("For more than 10 categories, a Pie or Doughnut chart is not suitable. Please choose another chart type or reduce the number of categories.");
+                    return;
+                }
+
+                const dataset = {
+                    label: selectedYAxis,
+                    data: chartData.map(row => row[selectedYAxis]),
+                    borderColor: chartColorInput.value,
+                    borderWidth: 1
+                };
+
+                if (chartTypeSelect.value === 'line') {
+                    dataset.backgroundColor = chartColorInput.value;
+                    dataset.borderWidth = document.getElementById('line-width-input').value;
+                    const lineType = document.getElementById('line-type-select').value;
+                    if (lineType === 'dashed') {
+                        dataset.borderDash = [5, 5];
+                    } else if (lineType === 'dotted') {
+                        dataset.borderDash = [2, 2];
+                    }
+                } else if (chartTypeSelect.value === 'bar') {
+                    dataset.backgroundColor = generateColorsForCategorical(labels.length);
+                    dataset.barPercentage = document.getElementById('bar-width-input').value;
+                    dataset.borderColor = document.getElementById('bar-edge-color-input').value;
+                    dataset.borderWidth = document.getElementById('bar-border-width-input').value;
+                } else if (chartTypeSelect.value === 'pie' || chartTypeSelect.value === 'doughnut') {
+                    dataset.backgroundColor = generateColorsForCategorical(chartData.length);
+                    dataset.borderColor = Array(chartData.length).fill('#ffffff'); // Keep white borders for visibility
+                }
+                datasets.push(dataset);
+            }
+
+            myChart = new Chart(ctx, {
+                type: chartTypeSelect.value,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitleInput.value,
+                            font: {
+                                size: 18,
+                                family: 'Poppins'
+                            },
+                            color: 'var(--text-color)'
+                        },
+                        legend: {
+                            display: !(chartTypeSelect.value === 'bar' && labels.length >= 10), // Hide legend for bar charts with >= 10 categories
+                            labels: {
+                                color: 'var(--text-color)',
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        if (chart.config.type === 'pie' || chart.config.type === 'doughnut' || chart.config.type === 'bar') {
+                                            return data.labels.map(function(label, i) {
+                                                const dataset = data.datasets[0];
+                                                const meta = chart.getDatasetMeta(0);
+                                                const hidden = meta.data[i].hidden;
+                                                return {
+                                                    text: label,
+                                                    fillStyle: Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[i] : dataset.backgroundColor,
+                                                    strokeStyle: Array.isArray(dataset.borderColor) ? dataset.borderColor[i] : dataset.borderColor,
+                                                    lineWidth: Array.isArray(dataset.borderWidth) ? dataset.borderWidth[i] : dataset.borderWidth,
+                                                    hidden: hidden,
+                                                    index: i,
+                                                    fontColor: hidden ? '#999' : 'var(--text-color)', // Grey out text when hidden
+                                                    strikethrough: hidden, // Add strike-through when hidden
+                                                    // Add onClick handler for toggling visibility and strike-through
+                                                    onClick: (e, legendItem, legend) => {
+                                                        const index = legendItem.index;
+                                                        const ci = legend.chart;
+                                                        ci.toggleDataVisibility(index);
+                                                        ci.update();
+                                                    }
+                                                };
+                                            });
+                                        } else if (chart.config.type === 'radar') {
+                                            return data.datasets.map(function(dataset, i) {
+                                                return {
+                                                    text: dataset.label,
+                                                    fillStyle: dataset.borderColor,
+                                                    strokeStyle: '#ffffff',
+                                                    lineWidth: 1,
+                                                    hidden: chart.getDatasetMeta(i).hidden,
+                                                    index: i,
+                                                    onClick: (e, legendItem, legend) => {
+                                                        const index = legendItem.index;
+                                                        const ci = legend.chart;
+                                                        ci.toggleDataVisibility(index);
+                                                        ci.update();
+                                                    }
+                                                };
+                                            });
+                                        } else {
+                                            // Default behavior for line chart
+                                            return Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                        }
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: chartTypeSelect.value !== 'radar' && chartTypeSelect.value !== 'pie' && chartTypeSelect.value !== 'doughnut',
+                            title: {
+                                display: true,
+                                text: xAxisLabelInput.value,
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                display: showGridsCheckbox.checked,
+                                color: gridColorInput.value
+                            },
+                            ticks: {
+                                color: axisColorInput.value
+                            }
+                        },
+                        y: {
+                            display: chartTypeSelect.value !== 'radar' && chartTypeSelect.value !== 'pie' && chartTypeSelect.value !== 'doughnut',
+                            title: {
+                                display: true,
+                                text: yAxisLabelInput.value,
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                display: showGridsCheckbox.checked,
+                                color: gridColorInput.value
+                            },
+                            ticks: {
+                                color: axisColorInput.value
+                            }
+                        }
+                    }
+                }
+            });
+            chartGenerationCount++;
+            chartCounter.textContent = `Charts Generated: ${chartGenerationCount}`;
+        }
+
+        function toggleChartOptions() {
+            const lineChartOptions = document.getElementById('line-chart-options');
+            const barChartOptions = document.getElementById('bar-chart-options');
+            if (chartTypeSelect.value === 'line') {
+                lineChartOptions.style.display = 'block';
+                barChartOptions.style.display = 'none';
+            } else if (chartTypeSelect.value === 'bar') {
+                lineChartOptions.style.display = 'none';
+                barChartOptions.style.display = 'block';
+            } else {
+                lineChartOptions.style.display = 'none';
+                barChartOptions.style.display = 'none';
+            }
+        }
+
+        chartTypeSelect.addEventListener('change', () => {
+            toggleChartOptions();
+            renderChart();
+        });
+
+        [xAxisSelect, yAxisSelect, chartTitleInput, xAxisLabelInput, yAxisLabelInput, chartColorInput, axisColorInput, gridColorInput, showGridsCheckbox].forEach(control => {
+            control.addEventListener('change', renderChart);
+        });
+
+        document.getElementById('line-width-input').addEventListener('change', renderChart);
+        document.getElementById('line-type-select').addEventListener('change', renderChart);
+        document.getElementById('bar-width-input').addEventListener('change', renderChart);
+        document.getElementById('bar-edge-color-input').addEventListener('change', renderChart);
+        document.getElementById('bar-border-width-input').addEventListener('change', renderChart);
+
+        downloadChartBtn.addEventListener('click', () => {
+            if (myChart) {
+                const link = document.createElement('a');
+                link.href = myChart.toBase64Image();
+                link.download = 'chart.png';
+                link.click();
+            }
+        });
+
+        // Set initial state of the chart options
+        toggleChartOptions();
+    </script>
+</body>
+</html>
