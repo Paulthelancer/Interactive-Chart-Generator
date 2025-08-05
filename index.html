@@ -246,7 +246,7 @@
                     <li><b>Purpose:</b> This tool helps visualize data from CSV/Excel files into various chart types.</li>
                     <li><b>Data Format:</b> Ensure your data has clear headers. The first column is typically used for X-axis/categories, and subsequent numeric columns for Y-axis/values.</li>
                     <li><b>Chart Types:</b> Supports Bar, Line, Pie, Doughnut, and Radar charts.</li>
-                    <li><b>Pie/Doughnut Chart Limit:</b> For optimal readability, Pie and Doughnut charts are best suited for 10 or fewer categories. An alert will appear if you exceed this.</li>
+                    <li><b>Pie/Doughnut Chart Limit:</b> For optimal readability, Pie and Doughnut charts are best suited for 12 or fewer categories. An alert will appear if you exceed this.</li>
                     <li><b>Customization:</b> Adjust chart title, axis labels, colors, line width, line type, bar width, and bar edge color using the controls.</li>
                     <li><b>Download:</b> Charts can be downloaded as PNG images.</li>
                 </ul>
@@ -429,8 +429,8 @@
                 labels = chartData.map(row => row[selectedXAxis]);
 
                 // Check for pie and doughnut chart suitability
-                if ((chartTypeSelect.value === 'pie' || chartTypeSelect.value === 'doughnut') && labels.length > 10) {
-                    alert("For more than 10 categories, a Pie or Doughnut chart is not suitable. Please choose another chart type or reduce the number of categories.");
+                if ((chartTypeSelect.value === 'pie' || chartTypeSelect.value === 'doughnut') && labels.length > 12) {
+                    alert("For more than 12 categories, a Pie or Doughnut chart is not suitable. Please choose another chart type or reduce the number of categories.");
                     return;
                 }
 
@@ -480,7 +480,7 @@
                             color: 'var(--text-color)'
                         },
                         legend: {
-                            display: !(chartTypeSelect.value === 'bar' && labels.length >= 10), // Hide legend for bar charts with >= 10 categories
+                            display: !(chartTypeSelect.value === 'bar' && labels.length >= 12), // Hide legend for bar charts with >= 12 categories
                             labels: {
                                 color: 'var(--text-color)',
                                 generateLabels: function(chart) {
